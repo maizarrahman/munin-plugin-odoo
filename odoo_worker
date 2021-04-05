@@ -1,0 +1,49 @@
+#!/bin/sh
+#. $MUNIN_LIBDIR/plugins/plugin.sh
+
+if [ "$1" = "autoconf" ]; then
+    echo yes
+    exit 0
+fi
+
+if [ "$1" = "config" ]; then
+    echo 'graph_title Odoo Workers Usage'
+    echo 'graph_vlabel worker'
+    echo 'graph_category odoo'
+    echo 'graph_info This graph shows the usage of Odoo workers'
+    #echo 'total.label Total'
+    echo 'busy.label Busy'
+    echo 'idle.label Idle'
+    echo 'busy.draw AREA'
+    echo 'idle.draw STACK'
+    echo 'idle.colour COLOUR6'
+    echo 'busy.colour COLOUR7'
+    echo 'killed.label Killed'
+    echo 'killed.draw LINE'
+    echo 'killed.colour COLOUR1'
+    #echo 'busy.warning 20'
+    #echo 'total.critical 640'
+    echo 'killed.warning 1'
+    echo 'killed.critical 3'
+    exit 0
+fi
+
+#odoo='./server/8.0/openerp'
+odoo='proj80'
+tmp='/tmp/topodop'
+top -b -n 1 | grep "$odoo" | grep python > $tmp
+# busy worker when CPU usage > 0.0
+busy=`awk 'BEGIN {busy=0;} {if ($9>0.0) {busy+=1}} END {print busy}' $tmp`
+
+# idle worker when CPU usage = 0.0
+idle=`awk 'BEGIN {idle=0;} {if ($9==0.0) {idle+=1}} END {print idle}' $tmp`
+
+# worker killed by kernel (out of memory)
+srvname='openerp-server80'
+tgl=`echo "$(date +'%b %d %H')"`
+killed=`journalctl -u "$srvname" | grep 'python invoked oom-killer' | grep "$tgl" | wc -l`
+
+#echo "total.value $total"
+echo "busy.value $busy"
+echo "idle.value $idle"
+echo "killed.value $killed"

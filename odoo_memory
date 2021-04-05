@@ -1,0 +1,37 @@
+#!/bin/sh
+#. $MUNIN_LIBDIR/plugins/plugin.sh
+
+if [ "$1" = "autoconf" ]; then
+    echo yes
+    exit 0
+fi
+
+if [ "$1" = "config" ]; then
+    echo 'graph_title Odoo Workers Memory Usage'
+    echo 'graph_args --base 1024 -l 0'
+    echo 'graph_vlabel Bytes'
+    echo 'graph_category odoo'
+    echo 'graph_info This graph shows the memory usage of Odoo workers'
+    echo 'total.label Total'
+    echo 'max.label Maximum'
+    echo 'avg.label Average'
+    echo 'max.warning 13000000000'
+    echo 'max.critical 15000000000'
+    exit 0
+fi
+
+odoo='./server/8.0/openerp'
+#odoo='/opt/odoo13/odoo/odoo-bin'
+# total workers memory usage
+#total=`ps aux | grep "$odoo" | grep conf | awk '{mem[$11]+=int($6*1024)}; END {for (i in mem) {print mem[i]}}'`
+total=`ps aux | grep "$odoo" | grep conf | awk '{mem+=int($6*1024)}; END {print mem}'`
+
+# max worker memory usage
+max=`ps aux | grep "$odoo" | grep conf | awk 'BEGIN {max=0;} {if ($6>max) {max=$6}} END {print max*1024}'`
+
+# average worker memory usage
+avg=`ps aux | grep "$odoo" | grep conf | awk '{ sum += $6 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
+
+echo "total.value $total"
+echo "max.value $max"
+echo "avg.value $avg"
