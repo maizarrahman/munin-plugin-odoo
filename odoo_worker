@@ -40,8 +40,8 @@ idle=`awk 'BEGIN {idle=0;} {if ($9==0.0) {idle+=1}} END {print idle}' $tmp`
 
 # worker killed by kernel (out of memory)
 srvname='openerp-server80'
-tgl=`echo "$(date +'%b %d %H')"`
-killed=`journalctl -u "$srvname" | grep 'python invoked oom-killer' | grep "$tgl" | wc -l`
+tgl=`echo "$(date +'%F')"`
+killed=`journalctl -u "$srvname" --since="$tgl" | grep 'python invoked oom-killer' | wc -l`
 
 #echo "total.value $total"
 echo "busy.value $busy"
