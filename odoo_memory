@@ -20,17 +20,15 @@ if [ "$1" = "config" ]; then
     exit 0
 fi
 
-odoo='./server/8.0/openerp'
-#odoo='/opt/odoo13/odoo/odoo-bin'
+odoo='odoo\|openerp'
 # total workers memory usage
-#total=`ps aux | grep "$odoo" | grep conf | awk '{mem[$11]+=int($6*1024)}; END {for (i in mem) {print mem[i]}}'`
-total=`ps aux | grep "$odoo" | grep conf | awk '{mem+=int($6*1024)}; END {print mem}'`
+total=`ps -eo 'rss,command' | grep "$odoo" | awk '{mem+=int($1*1024)}; END {print mem}'`
 
 # max worker memory usage
-max=`ps aux | grep "$odoo" | grep conf | awk 'BEGIN {max=0;} {if ($6>max) {max=$6}} END {print max*1024}'`
+max=`ps -eo 'rss,command' | grep "$odoo" | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max*1024}'`
 
 # average worker memory usage
-avg=`ps aux | grep "$odoo" | grep conf | awk '{ sum += $6 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
+avg=`ps -eo 'rss,command' | grep "$odoo" | awk '{ sum += $1 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
 
 echo "total.value $total"
 echo "max.value $max"
