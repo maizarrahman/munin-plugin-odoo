@@ -28,15 +28,12 @@ if [ "$1" = "config" ]; then
     exit 0
 fi
 
-#odoo='./server/8.0/openerp'
-odoo='proj80'
-tmp='/tmp/topodop'
-top -b -n 1 | grep "$odoo" | grep python > $tmp
+odoo='odoo\|openerp'
 # busy worker when CPU usage > 0.0
-busy=`awk 'BEGIN {busy=0;} {if ($9>0.0) {busy+=1}} END {print busy}' $tmp`
+busy=`ps -eo 'pcpu,command' | grep "$odoo" | awk 'BEGIN {busy=0;} {if ($1>0.0) {busy+=1}} END {print busy}'`
 
 # idle worker when CPU usage = 0.0
-idle=`awk 'BEGIN {idle=0;} {if ($9==0.0) {idle+=1}} END {print idle}' $tmp`
+idle=`ps -eo 'pcpu,command' | grep "$odoo" | awk 'BEGIN {idle=0;} {if ($1==0.0) {idle+=1}} END {print idle}'`
 
 # worker killed by kernel (out of memory)
 srvname='openerp-server80'
