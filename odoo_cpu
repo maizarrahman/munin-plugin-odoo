@@ -20,15 +20,15 @@ if [ "$1" = "config" ]; then
     exit 0
 fi
 
-odoo='odoo\|openerp'
+odoo='odoo-bin\|openerp\|odoo\.py'
 # total workers CPU usage
-total=`ps -eo 'pcpu,command' | grep "$odoo" | awk '{cpu+=$1}; END {print cpu}'`
+total=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk '{cpu+=$1}; END {print cpu}'`
 
 # max worker CPU usage
-max=`ps -eo 'pcpu,command' | grep "$odoo" | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max}'`
+max=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max}'`
 
 # average worker CPU usage
-avg=`ps -eo 'pcpu,command' | grep "$odoo" | awk '{ sum += $1 } END { if (NR > 0) print (sum / NR) }'`
+avg=`ps -eo 'pcpu,command' | grep "$odoo" |  grep -v grep |awk '{ sum += $1 } END { if (NR > 0) print (sum / NR) }'`
 
 echo "total.value $total"
 echo "max.value $max"
