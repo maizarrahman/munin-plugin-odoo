@@ -28,15 +28,15 @@ if [ "$1" = "config" ]; then
     exit 0
 fi
 
-odoo='odoo\|openerp'
+odoo='odoo-bin\|openerp\|odoo\.py'
 # busy worker when STATE is D or R
-busy=`ps -eo 'stat,command' | grep "$odoo" | cut -b 1 | grep 'D\|R' | wc -l`
+busy=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'D\|R' | wc -l`
 
 # idle worker when STATE is S
-idle=`ps -eo 'stat,command' | grep "$odoo" | cut -b 1 | grep 'S' | wc -l`
+idle=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'S' | wc -l`
 
 # worker killed by kernel (out of memory)
-srvname='openerp-server80'
+srvname='odoo17'
 tgl=`echo "$(date +'%F')"`
 killed=`journalctl -u "$srvname" --since="$tgl" | grep 'python invoked oom-killer' | wc -l`
 
