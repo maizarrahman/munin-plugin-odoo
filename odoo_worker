@@ -6,7 +6,10 @@ if [ "$1" = "autoconf" ]; then
     exit 0
 fi
 
+odoo='odoo-bin\|openerp\|odoo\.py'
 if [ "$1" = "config" ]; then
+    max=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | wc -l`
+    echo "graph_args --base 1000 --lower-limit 0 --upper-limit $max"
     echo 'graph_title Odoo Workers Usage'
     echo 'graph_vlabel worker'
     echo 'graph_category odoo'
@@ -28,7 +31,6 @@ if [ "$1" = "config" ]; then
     exit 0
 fi
 
-odoo='odoo-bin\|openerp\|odoo\.py'
 # busy worker when STATE is D or R
 busy=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'D\|R' | wc -l`
 
