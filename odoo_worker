@@ -29,11 +29,11 @@ if [ "$1" = "config" ]; then
 fi
 
 odoo='odoo\|openerp'
-# busy worker when CPU usage > 0.0
-busy=`ps -eo 'pcpu,command' | grep "$odoo" | awk 'BEGIN {busy=0;} {if ($1>0.0) {busy+=1}} END {print busy}'`
+# busy worker when STATE is D or R
+busy=`ps -eo 'stat,command' | grep "$odoo" | cut -b 1 | grep 'D\|R' | wc -l`
 
-# idle worker when CPU usage = 0.0
-idle=`ps -eo 'pcpu,command' | grep "$odoo" | awk 'BEGIN {idle=0;} {if ($1==0.0) {idle+=1}} END {print idle}'`
+# idle worker when STATE is S
+idle=`ps -eo 'stat,command' | grep "$odoo" | cut -b 1 | grep 'S' | wc -l`
 
 # worker killed by kernel (out of memory)
 srvname='openerp-server80'
