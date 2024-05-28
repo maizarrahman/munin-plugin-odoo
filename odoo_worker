@@ -40,8 +40,8 @@ fi
 #idle=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'S' | wc -l`
 
 # count only workers, without main process, gevent, and cron workers
-# it's indicated by letter l as second character of stat
-ps -eo 'stat,command' | grep "$odoo" | grep -v 'grep\|gevent' | grep '^.l' | cut -b 1 | awk 'BEGIN {busy=0;idle=0;wait=0;} {if ($1=="R") busy++; else if ($1=="S") idle++; else if ($1=="D") wait++;} END {printf "busy.value %d\nidle.value %d\nwait.value %d\n", busy, idle, wait}'
+# it's indicated by letter l as second character of stat, but in CentOS 7 there's no l, just S, then change to not s (main process) nor N (nice state of cron worker)
+ps -eo 'stat,command' | grep "$odoo" | grep -v 'grep\|gevent' | grep -v '^.s\|^.N' | cut -b 1 | awk 'BEGIN {busy=0;idle=0;wait=0;} {if ($1=="R") busy++; else if ($1=="S") idle++; else if ($1=="D") wait++;} END {printf "busy.value %d\nidle.value %d\nwait.value %d\n", busy, idle, wait}'
 
 # worker killed by kernel (out of memory)
 #srvname='odoo17'
