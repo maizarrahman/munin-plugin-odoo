@@ -13,7 +13,7 @@ if [ "$1" = "config" ]; then
     echo 'graph_category odoo'
     echo 'graph_info This graph shows the usage of Odoo workers'
     #echo 'total.label Total'
-    echo 'busy.label Busy'
+    echo 'busy.label Running'
     echo 'idle.label Idle'
     echo 'wait.label Waiting'
     echo 'wait.info Waiting for I/O (disk or network)'
