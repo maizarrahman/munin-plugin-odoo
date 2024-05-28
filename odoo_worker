@@ -8,8 +8,6 @@ fi
 
 odoo='odoo-bin\|openerp\|odoo\.py'
 if [ "$1" = "config" ]; then
-    max=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | wc -l`
-    echo "graph_args --base 1000 --lower-limit 0 --upper-limit $max"
     echo 'graph_title Odoo Workers Usage'
     echo 'graph_vlabel worker'
     echo 'graph_category odoo'
@@ -17,32 +15,40 @@ if [ "$1" = "config" ]; then
     #echo 'total.label Total'
     echo 'busy.label Busy'
     echo 'idle.label Idle'
+    echo 'wait.label Waiting'
+    echo 'wait.info Waiting for I/O (disk or network)'
     echo 'busy.draw AREA'
     echo 'idle.draw STACK'
+    echo 'wait.draw STACK'
     echo 'idle.colour COLOUR6'
     echo 'busy.colour COLOUR7'
-    echo 'killed.label Killed'
-    echo 'killed.draw LINE'
-    echo 'killed.colour COLOUR1'
+    echo 'wait.colour COLOUR1'
+    #echo 'killed.label Killed'
+    #echo 'killed.draw LINE'
+    #echo 'killed.colour COLOUR1'
     #echo 'busy.warning 20'
     #echo 'total.critical 640'
-    echo 'killed.warning 1'
-    echo 'killed.critical 3'
+    #echo 'killed.warning 1'
+    #echo 'killed.critical 3'
     exit 0
 fi
 
 # busy worker when STATE is D or R
-busy=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'D\|R' | wc -l`
+#busy=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'D\|R' | wc -l`
 
 # idle worker when STATE is S
-idle=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'S' | wc -l`
+#idle=`ps -eo 'stat,command' | grep "$odoo" | grep -v grep | cut -b 1 | grep 'S' | wc -l`
+
+# count only workers, without main process, gevent, and cron workers
+# it's indicated by letter l as second character of stat
+ps -eo 'stat,command' | grep "$odoo" | grep -v 'grep\|gevent' | grep '^.l' | cut -b 1 | awk 'BEGIN {busy=0;idle=0;wait=0;} {if ($1=="R") busy++; else if ($1=="S") idle++; else if ($1=="D") wait++;} END {printf "busy.value %d\nidle.value %d\nwait.value %d\n", busy, idle, wait}'
 
 # worker killed by kernel (out of memory)
-srvname='odoo17'
-tgl=`echo "$(date +'%F')"`
-killed=`journalctl -u "$srvname" --since="$tgl" | grep 'python invoked oom-killer' | wc -l`
+#srvname='odoo17'
+#tgl=`echo "$(date +'%F')"`
+#killed=`journalctl -u "$srvname" --since="$tgl" | grep 'python invoked oom-killer' | wc -l`
 
 #echo "total.value $total"
-echo "busy.value $busy"
-echo "idle.value $idle"
-echo "killed.value $killed"
+#echo "busy.value $busy"
+#echo "idle.value $idle"
+#echo "killed.value $killed"
