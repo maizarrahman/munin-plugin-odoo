@@ -28,7 +28,7 @@ odoo='odoo-bin\|openerp\|odoo\.py'
 # average worker memory usage
 #avg=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk '{ sum += $1 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
 
-ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {sum=0;max=0;avg=0;} {sum+=$1; if ($1>max) max=$1;} END {if (NR>0) avg=sum/NR; printf "total.value %d\nmax.value %d\navg.value %d\n", sum, max, avg}'
+ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {sum=0;max=0;avg=0;} {sum+=$1; if ($1>max) max=$1;} END {if (NR>0) avg=sum/NR; printf "total.value %d\nmax.value %d\navg.value %d\n", sum*1024, max*1024, avg*1024}'
 
 #echo "total.value $total"
 #echo "max.value $max"
