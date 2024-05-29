@@ -15,21 +15,21 @@ if [ "$1" = "config" ]; then
     echo 'total.label Total'
     echo 'max.label Maximum'
     echo 'avg.label Average'
-    echo 'total.warning 2400'
-    echo 'total.critical 2800'
     exit 0
 fi
 
 odoo='odoo-bin\|openerp\|odoo\.py'
 # total workers CPU usage
-total=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk '{cpu+=$1}; END {print cpu}'`
+#total=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk '{cpu+=$1}; END {print cpu}'`
 
 # max worker CPU usage
-max=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max}'`
+#max=`ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max}'`
 
 # average worker CPU usage
-avg=`ps -eo 'pcpu,command' | grep "$odoo" |  grep -v grep |awk '{ sum += $1 } END { if (NR > 0) print (sum / NR) }'`
+#avg=`ps -eo 'pcpu,command' | grep "$odoo" |  grep -v grep |awk '{ sum += $1 } END { if (NR > 0) print (sum / NR) }'`
 
-echo "total.value $total"
-echo "max.value $max"
-echo "avg.value $avg"
+ps -eo 'pcpu,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {sum=0;max=0;avg=0;} {sum+=$1; if ($1>max) max=$1;} END {if (NR>0) avg=sum/NR; printf "total.value %d\nmax.value %d\navg.value %d\n", sum, max, avg}'
+
+#echo "total.value $total"
+#echo "max.value $max"
+#echo "avg.value $avg"
