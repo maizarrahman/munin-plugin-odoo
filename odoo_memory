@@ -15,21 +15,21 @@ if [ "$1" = "config" ]; then
     echo 'total.label Total'
     echo 'max.label Maximum'
     echo 'avg.label Average'
-    echo 'max.warning 13000000000'
-    echo 'max.critical 15000000000'
     exit 0
 fi
 
 odoo='odoo-bin\|openerp\|odoo\.py'
 # total workers memory usage
-total=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk '{mem+=int($1*1024)}; END {print mem}'`
+#total=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk '{mem+=int($1*1024)}; END {print mem}'`
 
 # max worker memory usage
-max=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max*1024}'`
+#max=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {max=0;} {if ($1>max) {max=$1}} END {print max*1024}'`
 
 # average worker memory usage
-avg=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk '{ sum += $1 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
+#avg=`ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk '{ sum += $1 } END { if (NR > 0) printf "%.0f",(sum / NR)*1024 }'`
 
-echo "total.value $total"
-echo "max.value $max"
-echo "avg.value $avg"
+ps -eo 'rss,command' | grep "$odoo" | grep -v grep | awk 'BEGIN {sum=0;max=0;avg=0;} {sum+=$1; if ($1>max) max=$1;} END {if (NR>0) avg=sum/NR; printf "total.value %d\nmax.value %d\navg.value %d\n", sum, max, avg}'
+
+#echo "total.value $total"
+#echo "max.value $max"
+#echo "avg.value $avg"
