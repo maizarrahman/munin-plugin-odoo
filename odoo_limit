@@ -3,8 +3,6 @@
 # --- KONFIGURASI ---
 # Ganti dengan jalur aktual ke file log Odoo Anda
 ODOO_LOG_FILE="/opt/portal/log/portal.log"
-# Durasi jendela waktu untuk memproses log (dalam detik)
-TIME_WINDOW_SECONDS=300
 # -------------------
 
 # --- Fungsi untuk Mencetak Konfigurasi Munin ---
@@ -55,26 +53,7 @@ fetch_data() {
 
     # Gunakan 'tail' untuk membaca N baris terakhir agar lebih efisien
     # 10000 baris biasanya cukup untuk interval 5 menit, sesuaikan jika log Anda sangat padat
-    # LOG_TAIL=$(tail -n 10000 "$ODOO_LOG_FILE" 2>/dev/null)
-    # LOG_TAIL=$(cat "$ODOO_LOG_FILE" 2>/dev/null)
-
-    # Hitung batas waktu pembacaan log
-    NOW_EPOCH=$(TZ=UTC date +%s)
-    TIME_AGO_EPOCH=$((NOW_EPOCH - TIME_WINDOW_SECONDS))
-    TIME_AGO_DATE=$(date -d "@$TIME_AGO_EPOCH" +"%Y-%m-%d %H:%M:%S")
-
-    # Baca log hanya sekian waktu terakhir
-    LOG_TAIL=$(tac "$ODOO_LOG_FILE" | awk -v ts_limit="$TIME_AGO_DATE" '
-        {
-            # Ambil tanggal dan waktu dari baris log (kolom 1 dan 2)
-            log_datetime = $1 " " $2
-            # Jika log_datetime kurang dari batas waktu, hentikan pemrosesan
-            if (log_datetime < ts_limit) {
-                exit;
-            }
-            print $0; # Cetak baris yang ada dalam jendela waktu
-        }
-    ' | tac)
+    LOG_TAIL=$(tail -n 10000 "$ODOO_LOG_FILE" 2>/dev/null)
 
     # Hitung kemunculan setiap pesan menggunakan grep
     MAX_REQUEST_COUNT=$(echo "$LOG_TAIL" | grep -c "Worker ([0-9]\+) max request ([^)]\+) reached")
