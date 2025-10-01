@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# --- KONFIGURASI ---
+# Ganti dengan jalur aktual ke file log Odoo Anda
+ODOO_LOG_FILE="/opt/portal/log/portal.log"
+# Durasi jendela waktu untuk memproses log (dalam detik)
+TIME_WINDOW_SECONDS=300
+# -------------------
+
+# --- Fungsi untuk Mencetak Konfigurasi Munin ---
+config() {
+    echo "graph_title Odoo Limit Reached"
+    echo "graph_vlabel Count"
+    echo "graph_category odoo"
+    echo "graph_args --base 1000 -l 0" # Mulai grafik dari 0
+
+    echo "max_request.label Max Request Reached"
+    echo "max_request.type GAUGE"
+    echo "max_request.min 0"
+    # echo "max_request.warning 5" # Contoh: Peringatan jika lebih dari 5 kali
+    # echo "max_request.critical 10" # Contoh: Kritis jika lebih dari 10 kali
+    echo "max_request.info Number of Odoo workers, including cron workers, exceeding limit_request"
+
+    echo "mem_limit.label Virtual Memory Limit Reached"
+    echo "mem_limit.type GAUGE"
+    echo "mem_limit.min 0"
+    # echo "mem_limit.warning 3"
+    # echo "mem_limit.critical 5"
+    echo "mem_limit.info Number of Odoo workers, including cron workers, exceeding limit_memory_soft"
+
+    echo "cpu_limit.label CPU Time Limit Reached"
+    echo "cpu_limit.type GAUGE"
+    echo "cpu_limit.min 0"
+    # echo "cpu_limit.warning 3"
+    # echo "cpu_limit.critical 5"
+    echo "cpu_limit.info Number of Odoo workers, including cron workers, exceeding cpu time limit_time_cpu"
+
+    echo "timeout.label Real Time Limit Reached"
+    echo "timeout.type GAUGE"
+    echo "timeout.min 0"
+    # echo "timeout.warning 5"
+    # echo "timeout.critical 10"
+    echo "timeout.info Number of Odoo workers, including cron workers, exceeding limit_time_real"
+
+    exit 0
+}
+
+# --- Fungsi untuk Mengumpulkan Data ---
+fetch_data() {
+    # Periksa apakah file log ada
+    if [ ! -f "$ODOO_LOG_FILE" ]; then
+        echo "Error: Odoo log file not found at $ODOO_LOG_FILE" >&2
+        exit 1
+    fi
+
+    # Gunakan 'tail' untuk membaca N baris terakhir agar lebih efisien
+    # 10000 baris biasanya cukup untuk interval 5 menit, sesuaikan jika log Anda sangat padat
+    # LOG_TAIL=$(tail -n 10000 "$ODOO_LOG_FILE" 2>/dev/null)
+    # LOG_TAIL=$(cat "$ODOO_LOG_FILE" 2>/dev/null)
+
+    # Hitung batas waktu pembacaan log
+    NOW_EPOCH=$(TZ=UTC date +%s)
+    TIME_AGO_EPOCH=$((NOW_EPOCH - TIME_WINDOW_SECONDS))
+    TIME_AGO_DATE=$(date -d "@$TIME_AGO_EPOCH" +"%Y-%m-%d %H:%M:%S")
+
+    # Baca log hanya sekian waktu terakhir
+    LOG_TAIL=$(tac "$ODOO_LOG_FILE" | awk -v ts_limit="$TIME_AGO_DATE" '
+        {
+            # Ambil tanggal dan waktu dari baris log (kolom 1 dan 2)
+            log_datetime = $1 " " $2
+            # Jika log_datetime kurang dari batas waktu, hentikan pemrosesan
+            if (log_datetime < ts_limit) {
+                exit;
+            }
+            print $0; # Cetak baris yang ada dalam jendela waktu
+        }
+    ' | tac)
+
+    # Hitung kemunculan setiap pesan menggunakan grep
+    MAX_REQUEST_COUNT=$(echo "$LOG_TAIL" | grep -c "Worker ([0-9]\+) max request ([^)]\+) reached")
+    MEM_LIMIT_COUNT=$(echo "$LOG_TAIL" | grep -c "Worker ([0-9]\+) virtual memory limit ([^)]\+) reached")
+    CPU_LIMIT_COUNT=$(echo "$LOG_TAIL" | grep -c "Worker ([0-9]\+) CPU time limit ([^)]\+) reached")
+    TIME_LIMIT_COUNT=$(echo "$LOG_TAIL" | grep WARNING | grep -c " virtual real time limit ")
+    LONGPOLLING_COUNT=$(echo "$LOG_TAIL" | grep WARNING | grep -c "LongPolling virtual memory limit reached")
+    SMEM_LIMIT_COUNT=$(echo "$LOG_TAIL" | grep WARNING | grep -c "Server memory limit ([^)]\+) reached")
+    MEM_LIMIT_COUNT=$(( MEM_LIMIT_COUNT + SMEM_LIMIT_COUNT + LONGPOLLING_COUNT ))
+    TIMEOUT_COUNT=$(echo "$LOG_TAIL" | grep ERROR | grep -c " timeout after ")
+    TIMEOUT_COUNT=$(( TIMEOUT_COUNT + TIME_LIMIT_COUNT ))
+
+    # Cetak nilai dalam format Munin
+    echo "max_request.value $MAX_REQUEST_COUNT"
+    echo "mem_limit.value $MEM_LIMIT_COUNT"
+    echo "cpu_limit.value $CPU_LIMIT_COUNT"
+    echo "timeout.value $TIMEOUT_COUNT"
+}
+
+# --- Logika Utama ---
+case "$1" in
+    autoconf)
+        if [ -f "$ODOO_LOG_FILE" ]; then
+            echo "yes"
+        else
+            echo "no"
+            echo "Reason: Odoo log file not found at $ODOO_LOG_FILE" >&2
+        fi
+        ;;
+    config)
+        config
+        ;;
+    *)
+        fetch_data
+        ;;
+esac
